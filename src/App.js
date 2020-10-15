@@ -10,9 +10,9 @@ function App() {
   const [net, setNet] = useState('testnet')
   const [balance, setBalance] = useState(0)
   const [computer, setComputer] = useState(new Computer({
-    seed: 'confirm civil rocket someone length siren survey face illegal ice profit light',
+    seed: 'lemon purity fragile glide boss you bright basic cube ordinary salon behind',
     chain: 'BSV',
-    network: net, // testnet or livenet
+    network: net,
   }))
 
   const [name, setName] = useState('')
@@ -24,7 +24,6 @@ function App() {
   const [revs, setRevs] = useState([])
   const [corporations, setCorporations] = useState([])
   const [refresh, setRefresh] = useState(0)
-  const [isupdate, setIsupdate] = useState(false)
   const [editingCorp, setEditingCorp] = useState(null)
 
   useEffect(() => {
@@ -37,8 +36,22 @@ function App() {
   }, [computer.db.wallet, refresh])
 
   useEffect(() => {
+    const fetchRev = async (rev) => computer.sync(rev)
     const fetchCorporations = async () => {
-      setCorporations(await Promise.all(revs.map(async rev => computer.sync(rev))))
+      // const corps = await Promise.all(
+      //   revs.map(await fetchRev)
+      // )
+      const corps = []
+      for(let i =0; i< revs.length; i++) {
+        try {
+          corps.push(await fetchRev(revs[i]))
+          console.log(`synced ${revs[i]}`)
+        } catch (err) {
+          console.error(`Error syncing rev ${revs[i]}`)
+          console.error(err)
+        }
+      }
+      setCorporations(corps)
     }
     fetchCorporations()
   }, [revs, computer])
@@ -46,38 +59,61 @@ function App() {
   useEffect(() => console.log('revs', revs), [revs])
   useEffect(() => console.log('corporations', corporations), [corporations])
 
-  const handleSubmit = async (evt) => {
-    evt.preventDefault()
-    if (isupdate) {
-      await editingCorp.setName(name)
-      await editingCorp.setSymbol(symbol)
-      await editingCorp.setQuantity(quantity)
-      await editingCorp.setAgreement(agreement)
-      await editingCorp.setImage(image)
-    } else {
-      const corp = await computer.new(CorporateToken, [name, symbol, quantity, 
-        agreement, image])
-      console.log('created corp', corp)
-    }
+  const addToken = async () => {
+    const corp = await computer.new(CorporateToken, [
+      computer.db.wallet.getPublicKey().toString(),
+      name, symbol, quantity,
+      agreement, image])
+    console.log('created corp', corp)
+    clearForm()
+    setRefresh(refresh + 1)
+  }
+
+  const updateToken = async () => {
+      console.log(`editing token`)
+      if (editingCorp) {
+        await editingCorp.setName(name)
+        await editingCorp.setSymbol(symbol)
+        await editingCorp.setQuantity(quantity)
+        await editingCorp.setAgreement(agreement)
+        await editingCorp.setImage(image)
+      }
+      setRefresh(refresh + 1)
   }
 
   const loadWallet = () => {
-    const computer = new Computer({
+    const comp = new Computer({
       seed: seed,
       chain: 'BSV',
       network: net, // testnet or livenet
     })
-    setComputer(computer)
+    setComputer(comp)
+  }
+
+  const refreshWallet = async () => {
+    const comp = new Computer({
+      seed: computer.db.wallet.getMnemonic().toString(),
+      chain: 'BSV', network: net,
+    })
+    setComputer(comp)
+  }
+
+  const clearForm = () => {
+    setName('')
+    setSymbol('')
+    setQuantity('')
+    setAgreement('')
+    setImage('')
   }
 
   const select = (corp) => {
     setEditingCorp(corp)
-    setName(corp.name)
-    setSymbol(corp.symbol)
-    setQuantity(corp.quantity)
-    setAgreement(corp.agreement)
-    setImage(corp.image)
-    setIsupdate(true)
+    setName(corp.name || '')
+    setSymbol(corp.symbol || '')
+    setQuantity(corp.quantity || '')
+    setAgreement(corp.agreement || '')
+    setImage(corp.image || '')
+    setRefresh(refresh + 1)
   }
 
   return (
@@ -87,7 +123,7 @@ function App() {
       <b>Public Key</b>&nbsp;{computer.db.wallet.getPublicKey().toString()}<br />
       <b>Seed</b>&nbsp;{computer.db.wallet.mnemonic.toString()}<br />
       <b>Balance</b>&nbsp;{balance/1e8} {computer.db.wallet.restClient.chain}
-      <a target="_blank" href="https://faucet.bitcoincloud.net/"> Get testnet coins</a>
+      <a target="_blank" href="https://faucet.bitcoincloud.net/" rel="noopener noreferrer"> Get testnet coins</a>
       <br />
       Seed<br />
         <input type="string" value={seed} onChange={e => setSeed(e.target.value)} />
@@ -98,9 +134,13 @@ function App() {
       <button type="submit" onClick={() => loadWallet()}>
         Load Wallet
       </button>
+      &nbsp;
+      <button onClick={() => refreshWallet()}>
+        Refresh Wallet
+      </button>
 
-      <h2>Create new Token</h2>
-      <form onSubmit={handleSubmit}>
+      <h2>Create/Update Token</h2>
+      <div>
         Name<br />
         <input type="string" value={name} onChange={e => setName(e.target.value)} />
 
@@ -116,13 +156,14 @@ function App() {
         Image (txid)<br />
         <input type="string" value={image} onChange={e => setImage(e.target.value)} />
 
-        <button type="submit" value="Send Bitcoin">Create Token</button>
-        <button type="submit" value="Update Bitcoin">Update Token</button>
-      </form>
+        <button onClick={() => addToken()} value="Send Bitcoin">Create Token</button>
+        &nbsp;
+        <button onClick={() => updateToken()} value="Update Bitcoin">Update Token</button>
+      </div>
 
       <h2>Your Companies</h2>
       <ul className="flex-container">
-        {corporations.map(c => <Card corp={c} key={c.symbol} click={select} />)}
+      {corporations.filter(c=>c!=undefined).map(c => <Card corp={c} key={c?c.symbol:''} click={select} />)}
       </ul>
     </div>
   )

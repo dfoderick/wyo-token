@@ -1,7 +1,7 @@
 export default class CorporateToken {
-    constructor(owner,name, symbol, quantity, 
+    constructor(purchaser, name, symbol, quantity, 
         agreement, image) {
-      this._owners = [owner]
+      this._owners = [purchaser]
       this.name = name
       this.symbol = symbol
       this.quantity = quantity
