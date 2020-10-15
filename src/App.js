@@ -86,7 +86,9 @@ function App() {
       <b>Address</b>&nbsp;{computer.db.wallet.getAddress().toString()}<br />
       <b>Public Key</b>&nbsp;{computer.db.wallet.getPublicKey().toString()}<br />
       <b>Seed</b>&nbsp;{computer.db.wallet.mnemonic.toString()}<br />
-      <b>Balance</b>&nbsp;{balance/1e8} {computer.db.wallet.restClient.chain}<br />
+      <b>Balance</b>&nbsp;{balance/1e8} {computer.db.wallet.restClient.chain}
+      <a target="_blank" href="https://faucet.bitcoincloud.net/"> Get testnet coins</a>
+      <br />
       Seed<br />
         <input type="string" value={seed} onChange={e => setSeed(e.target.value)} />
       Network
