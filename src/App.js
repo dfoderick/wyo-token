@@ -10,7 +10,7 @@ function App() {
   const [net, setNet] = useState('testnet')
   const [balance, setBalance] = useState(0)
   const [computer, setComputer] = useState(new Computer({
-    seed: 'lemon purity fragile glide boss you bright basic cube ordinary salon behind',
+    seed: 'acquire earn wheat sorry master bulk strike this ensure ginger announce stand',
     chain: 'BSV',
     network: net,
   }))
